@@ -103,6 +103,29 @@ function ChartTooltip({
 
 type ChartRow = Record<string, string | number>;
 
+/** 图例悬停：多曲线时压低其余线透明度并加粗当前线；单选时仅加粗对应线 */
+function lineEmphasis(
+  lineIndex: number,
+  filter: number | "all",
+  hoverLine: number | null,
+): { strokeOpacity: number; strokeWidth: number } {
+  if (filter !== "all") {
+    const onChart = lineIndex === filter;
+    const hoverThis = hoverLine === lineIndex;
+    if (onChart && hoverThis && hoverLine != null) {
+      return { strokeOpacity: 1, strokeWidth: 3 };
+    }
+    return { strokeOpacity: 1, strokeWidth: 2 };
+  }
+  if (hoverLine == null) {
+    return { strokeOpacity: 1, strokeWidth: 2 };
+  }
+  if (lineIndex === hoverLine) {
+    return { strokeOpacity: 1, strokeWidth: 3 };
+  }
+  return { strokeOpacity: 0.18, strokeWidth: 2 };
+}
+
 function buildChartRows(
   dates: string[],
   items: ResolvedItem[],
@@ -129,6 +152,7 @@ export default function App() {
   const [missingModal, setMissingModal] = useState<MissingLine[] | null>(null);
   const [filter, setFilter] = useState<number | "all">("all");
   const [chartRange, setChartRange] = useState<ChartRangeKey>("1y");
+  const [legendHoverLine, setLegendHoverLine] = useState<number | null>(null);
 
   const displayChartData = useMemo(() => {
     if (chartData.length === 0) return [];
@@ -209,6 +233,7 @@ export default function App() {
       setChartData(rows);
       setChartRange("1y");
       setFilter("all");
+      setLegendHoverLine(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -220,6 +245,15 @@ export default function App() {
     if (filter === "all") return items;
     return items.filter((x) => x.lineIndex === filter);
   }, [filter, items]);
+
+  /** 「全部」且悬停某条时，把该曲线最后绘制以便压在其它线之上 */
+  const linesToRender = useMemo(() => {
+    if (filter !== "all" || legendHoverLine == null) return visibleItems;
+    const hit = visibleItems.find((x) => x.lineIndex === legendHoverLine);
+    const rest = visibleItems.filter((x) => x.lineIndex !== legendHoverLine);
+    if (!hit) return visibleItems;
+    return [...rest, hit];
+  }, [visibleItems, filter, legendHoverLine]);
 
   return (
     <div className="app">
@@ -280,11 +314,19 @@ export default function App() {
         </div>
 
         {items.length > 0 ? (
-          <div className="legend-row" style={{ marginBottom: "0.65rem" }}>
+          <div
+            className="legend-row"
+            style={{ marginBottom: "0.65rem" }}
+            onPointerLeave={() => setLegendHoverLine(null)}
+          >
             <button
               type="button"
               className={`legend-btn${filter === "all" ? " active" : ""}`}
-              onClick={() => setFilter("all")}
+              onClick={() => {
+                setFilter("all");
+                setLegendHoverLine(null);
+              }}
+              onPointerEnter={() => setLegendHoverLine(null)}
             >
               全部
             </button>
@@ -293,7 +335,11 @@ export default function App() {
                 key={it.lineIndex}
                 type="button"
                 className={`legend-btn${filter === it.lineIndex ? " active" : ""}`}
-                onClick={() => setFilter(it.lineIndex)}
+                onClick={() => {
+                  setFilter(it.lineIndex);
+                  setLegendHoverLine(null);
+                }}
+                onPointerEnter={() => setLegendHoverLine(it.lineIndex)}
               >
                 <img className="legend-icon" src={iconUrl(it.typeId)} alt="" loading="lazy" />
                 <span>{it.displayName}</span>
@@ -345,9 +391,10 @@ export default function App() {
                     />
                   )}
                 />
-                {visibleItems.map((it, idx) => {
+                {linesToRender.map((it, idx) => {
                   const globalIdx = items.findIndex((x) => x.lineIndex === it.lineIndex);
                   const color = LINE_COLORS[(globalIdx >= 0 ? globalIdx : idx) % LINE_COLORS.length];
+                  const { strokeOpacity, strokeWidth } = lineEmphasis(it.lineIndex, filter, legendHoverLine);
                   return (
                     <Line
                       key={it.lineIndex}
@@ -355,8 +402,9 @@ export default function App() {
                       dataKey={lineDataKey(it.lineIndex)}
                       name={`${it.displayName} ×${it.quantity}`}
                       stroke={color}
+                      strokeOpacity={strokeOpacity}
                       dot={false}
-                      strokeWidth={2}
+                      strokeWidth={strokeWidth}
                       isAnimationActive={false}
                     />
                   );
