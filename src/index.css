@@ -1,0 +1,39 @@
+:root {
+  --bg-deep: #0a0f0d;
+  --bg-panel: #0f1612;
+  --bg-elevated: #141f1a;
+  --border: #1e3d32;
+  --border-glow: #2a5c4a;
+  --text: #e8f5ef;
+  --text-muted: #7a9e8f;
+  --accent: #3dff9c;
+  --accent-dim: #1a8f5c;
+  --grid: rgba(58, 168, 122, 0.08);
+  --font-sans: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-deep);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(26, 143, 92, 0.18), transparent),
+    linear-gradient(180deg, #0c1210 0%, var(--bg-deep) 40%);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
