@@ -104,13 +104,13 @@ function sortValue(it: EstimatedItem, key: SortKey): number | string {
   }
 }
 
-/** 按中间价总值降序排列，累计达 70% 前的物品各自一色，其余合并为「其他」 */
-function buildDistribution(items: EstimatedItem[]): Distribution {
+/** 按指定价值降序排列，累计达 70% 前的物品各自一色，其余合并为「其他」 */
+function buildDistribution(
+  items: EstimatedItem[],
+  getValue: (it: EstimatedItem) => number,
+): Distribution {
   const valued = items
-    .map((it) => {
-      const mid = midPrice(it.price);
-      return { it, value: mid != null ? mid * it.quantity : 0 };
-    })
+    .map((it) => ({ it, value: getValue(it) }))
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value);
 
@@ -213,8 +213,12 @@ export default function MarketEstimate() {
     }
   }, [text]);
 
-  const distribution = useMemo(
-    () => (result ? buildDistribution(result.items) : null),
+  const distBuy = useMemo(
+    () => (result ? buildDistribution(result.items, (it) => (it.price?.b ?? 0) * it.quantity) : null),
+    [result],
+  );
+  const distSell = useMemo(
+    () => (result ? buildDistribution(result.items, (it) => (it.price?.s ?? 0) * it.quantity) : null),
     [result],
   );
 
@@ -283,6 +287,67 @@ export default function MarketEstimate() {
   const thSortClass = (key: SortKey): string =>
     !sortState || sortState.key !== key ? "th-sort" : `th-sort active ${sortState.dir}`;
 
+  const renderDistribution = (title: string, dist: Distribution | null) => {
+    if (!dist || dist.total === 0) return null;
+    return (
+      <div className="dist-panel">
+        <div className="dist-head">
+          <h3 className="dist-title">{title}</h3>
+        </div>
+        <div
+          className="dist-bar"
+          role="img"
+          aria-label={title}
+          onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
+          onMouseLeave={() => setHoverInfo(null)}
+        >
+          {dist.segments.map((seg) => (
+            <div
+              key={seg.typeId}
+              className="dist-seg"
+              style={{ flexGrow: seg.pct, background: seg.color }}
+              onMouseEnter={() =>
+                setHoverInfo({ typeId: seg.typeId, name: seg.name, value: seg.value, pct: seg.pct })
+              }
+            />
+          ))}
+          {dist.other ? (
+            <div
+              className="dist-seg dist-seg--other"
+              style={{ flexGrow: dist.other.pct }}
+              onMouseEnter={() =>
+                setHoverInfo({
+                  name: "其他",
+                  value: dist.other!.value,
+                  pct: dist.other!.pct,
+                })
+              }
+            />
+          ) : null}
+        </div>
+        <div className="dist-legend">
+          {dist.segments.map((seg) => (
+            <div key={seg.typeId} className="dist-legend-item">
+              <span className="dist-swatch" style={{ background: seg.color }} />
+              <img className="dist-legend-icon" src={iconUrl(seg.typeId)} alt="" loading="lazy" />
+              <span className="dist-legend-name" title={seg.name}>{seg.name}</span>
+              <span className="dist-legend-pct">{(seg.pct * 100).toFixed(1)}%</span>
+              <span className="dist-legend-value">{formatIskTotal(seg.value)}</span>
+            </div>
+          ))}
+          {dist.other ? (
+            <div className="dist-legend-item">
+              <span className="dist-swatch dist-swatch--other" />
+              <span className="dist-legend-name">其他</span>
+              <span className="dist-legend-pct">{(dist.other.pct * 100).toFixed(1)}%</span>
+              <span className="dist-legend-value">{formatIskTotal(dist.other.value)}</span>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <section className="input-panel">
@@ -326,63 +391,8 @@ export default function MarketEstimate() {
             </div>
           </div>
 
-          {distribution && distribution.total > 0 ? (
-            <div className="dist-panel">
-              <div className="dist-head">
-                <h3 className="dist-title">价格占比分布</h3>
-              </div>
-              <div
-                className="dist-bar"
-                role="img"
-                aria-label="价格占比分布条"
-                onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
-                onMouseLeave={() => setHoverInfo(null)}
-              >
-                {distribution.segments.map((seg) => (
-                  <div
-                    key={seg.typeId}
-                    className="dist-seg"
-                    style={{ flexGrow: seg.pct, background: seg.color }}
-                    onMouseEnter={() =>
-                      setHoverInfo({ typeId: seg.typeId, name: seg.name, value: seg.value, pct: seg.pct })
-                    }
-                  />
-                ))}
-                {distribution.other ? (
-                  <div
-                    className="dist-seg dist-seg--other"
-                    style={{ flexGrow: distribution.other.pct }}
-                    onMouseEnter={() =>
-                      setHoverInfo({
-                        name: "其他",
-                        value: distribution.other!.value,
-                        pct: distribution.other!.pct,
-                      })
-                    }
-                  />
-                ) : null}
-              </div>
-              <div className="dist-legend">
-                {distribution.segments.map((seg) => (
-                  <div key={seg.typeId} className="dist-legend-item">
-                    <span className="dist-swatch" style={{ background: seg.color }} />
-                    <img className="dist-legend-icon" src={iconUrl(seg.typeId)} alt="" loading="lazy" />
-                    <span className="dist-legend-name" title={seg.name}>{seg.name}</span>
-                    <span className="dist-legend-pct">{(seg.pct * 100).toFixed(1)}%</span>
-                    <span className="dist-legend-value">{formatIskTotal(seg.value)}</span>
-                  </div>
-                ))}
-                {distribution.other ? (
-                  <div className="dist-legend-item">
-                    <span className="dist-swatch dist-swatch--other" />
-                    <span className="dist-legend-name">其他</span>
-                    <span className="dist-legend-pct">{(distribution.other.pct * 100).toFixed(1)}%</span>
-                    <span className="dist-legend-value">{formatIskTotal(distribution.other.value)}</span>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
+          {renderDistribution("买价分布", distBuy)}
+          {renderDistribution("卖价分布", distSell)}
 
           {hoverInfo ? (
             <div
