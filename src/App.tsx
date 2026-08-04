@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import MarketEstimate from "./MarketEstimate";
 import "./App.css";
 import {
   fetchMarketHistory,
@@ -144,6 +145,7 @@ function buildChartRows(
 }
 
 export default function App() {
+  const [view, setView] = useState<"chart" | "estimate">("chart");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -258,32 +260,56 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1 className="app-title">EVE 市场历史曲线</h1>
-        <p className="app-sub">英文物品名 · Jita · 数量×日均价</p>
+        <div className="app-header-row">
+          <div>
+            <h1 className="app-title">EVE 市场工具</h1>
+            <p className="app-sub">英文物品名 · Jita (The Forge)</p>
+          </div>
+          <nav className="app-nav">
+            <button
+              type="button"
+              className={`nav-link${view === "chart" ? " active" : ""}`}
+              onClick={() => setView("chart")}
+            >
+              历史曲线
+            </button>
+            <button
+              type="button"
+              className={`nav-link${view === "estimate" ? " active" : ""}`}
+              onClick={() => setView("estimate")}
+            >
+              市场估价
+            </button>
+          </nav>
+        </div>
       </header>
 
-      <section className="input-panel">
-        <label className="input-label" htmlFor="items-input">
-          物品列表
-        </label>
-        <textarea
-          id="items-input"
-          className="item-textarea"
-          placeholder={"名称\t数量\nEnriched Uranium\t4"}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          spellCheck={false}
-        />
-        <div className="toolbar">
-          <button type="button" className="btn-primary" disabled={loading} onClick={() => void load()}>
-            {loading ? "加载中…" : "解析并绘制"}
-          </button>
-          <span className="hint">
-            最晚日锚定 · {HISTORY_DAYS} 天 · 上图切范围 · 缺日 0 · 同名合并
-          </span>
-        </div>
-        {error ? <div className="err">{error}</div> : null}
-      </section>
+      {view === "estimate" ? (
+        <MarketEstimate />
+      ) : (
+        <>
+          <section className="input-panel">
+            <label className="input-label" htmlFor="items-input">
+              物品列表
+            </label>
+            <textarea
+              id="items-input"
+              className="item-textarea"
+              placeholder={"名称\t数量\nEnriched Uranium\t4"}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              spellCheck={false}
+            />
+            <div className="toolbar">
+              <button type="button" className="btn-primary" disabled={loading} onClick={() => void load()}>
+                {loading ? "加载中…" : "解析并绘制"}
+              </button>
+              <span className="hint">
+                最晚日锚定 · {HISTORY_DAYS} 天 · 上图切范围 · 缺日 0 · 同名合并
+              </span>
+            </div>
+            {error ? <div className="err">{error}</div> : null}
+          </section>
 
       <section className="chart-section">
         <div className="chart-head">
@@ -438,6 +464,8 @@ export default function App() {
           </div>
         </div>
       ) : null}
+        </>
+      )}
     </div>
   );
 }

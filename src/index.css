@@ -24,12 +24,17 @@ body,
   margin: 0;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: var(--font-sans);
   background: var(--bg-deep);
   background-image:
     radial-gradient(ellipse 120% 80% at 50% -20%, rgba(26, 143, 92, 0.18), transparent),
     linear-gradient(180deg, #0c1210 0%, var(--bg-deep) 40%);
+  background-attachment: fixed;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }

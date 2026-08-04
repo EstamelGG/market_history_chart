@@ -9,6 +9,14 @@
   margin-bottom: 1.25rem;
 }
 
+.app-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .app-title {
   font-size: 1.35rem;
   font-weight: 600;
@@ -21,6 +29,40 @@
   margin: 0;
   font-size: 0.875rem;
   color: var(--text-muted);
+}
+
+.app-nav {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-deep);
+  flex-shrink: 0;
+}
+
+.nav-link {
+  appearance: none;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  padding: 0.4rem 0.95rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.nav-link:hover:not(.active) {
+  background: rgba(42, 92, 74, 0.25);
+  color: var(--text);
+}
+
+.nav-link.active {
+  background: rgba(61, 255, 156, 0.14);
+  color: var(--accent);
 }
 
 .input-panel {
@@ -329,4 +371,280 @@
   height: 200px;
   color: var(--text-muted);
   font-size: 0.9rem;
+}
+
+/* ===== 市场估价 ===== */
+
+.estimate-section {
+  margin-top: 1.5rem;
+}
+
+.estimate-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.estimate-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+}
+
+.estimate-card--buy {
+  border-color: rgba(61, 255, 156, 0.28);
+  box-shadow: 0 0 0 1px rgba(61, 255, 156, 0.14) inset;
+}
+
+.estimate-card--sell {
+  border-color: rgba(251, 191, 36, 0.28);
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.14) inset;
+}
+
+.estimate-card--mid {
+  border-color: rgba(34, 211, 238, 0.28);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.14) inset;
+}
+
+.estimate-card-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.estimate-card-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.estimate-card--sell .estimate-card-value {
+  color: #fbbf24;
+}
+
+.estimate-card--mid .estimate-card-value {
+  color: #22d3ee;
+}
+
+.estimate-card-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== 分布条 ===== */
+
+.dist-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.dist-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.dist-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.dist-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.dist-bar {
+  display: flex;
+  width: 100%;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-deep);
+}
+
+.dist-seg {
+  min-width: 0;
+  height: 100%;
+  transition: opacity 0.15s;
+  cursor: default;
+}
+
+.dist-bar:hover .dist-seg {
+  opacity: 0.65;
+}
+
+.dist-bar:hover .dist-seg:hover {
+  opacity: 1;
+}
+
+.dist-seg--other {
+  background: #5a6b62;
+}
+
+.dist-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.dist-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  min-width: 0;
+}
+
+.dist-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.dist-swatch--other {
+  background: #5a6b62;
+}
+
+.dist-legend-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  object-fit: cover;
+  background: var(--bg-deep);
+  flex-shrink: 0;
+}
+
+.dist-legend-name {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+.dist-legend-pct {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.dist-legend-value {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.dist-tooltip {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-glow);
+  border-radius: 8px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.78rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+
+.dist-tooltip-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--bg-deep);
+  flex-shrink: 0;
+}
+
+.dist-tooltip-name {
+  color: var(--text);
+  font-weight: 600;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dist-tooltip-value {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.dist-tooltip-pct {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.estimate-table-wrap {
+  overflow-x: auto;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.estimate-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.estimate-table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.estimate-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.estimate-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.estimate-table tbody tr:hover {
+  background: rgba(42, 92, 74, 0.15);
+}
+
+.estimate-cell-name {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.estimate-cell-num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
 }

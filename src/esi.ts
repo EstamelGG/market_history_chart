@@ -231,3 +231,74 @@ export function lineIndexFromDataKey(dataKey: string | number | undefined): numb
   if (!m) return null;
   return Number(m[1]);
 }
+
+// ===== 市场估价 =====
+
+/** 买价（最高买单）与售价（最低卖单）；某侧无订单则为 null */
+export type MarketPrice = { b: number | null; s: number | null };
+
+export type MarketOrder = {
+  is_buy_order: boolean;
+  price: number;
+  type_id: number;
+};
+
+/** 获取某 type_id 在 The Forge 的市场订单（自动翻页） */
+export async function fetchMarketOrders(typeId: number): Promise<MarketOrder[]> {
+  const all: MarketOrder[] = [];
+  let page = 1;
+  let pages = 1;
+  do {
+    const url = `${ESI_BASE}/markets/${REGION_FORGE}/orders?type_id=${typeId}&page=${page}`;
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok) {
+      throw new Error(`orders ${typeId} page ${page}: ${res.status}`);
+    }
+    const data = (await res.json()) as MarketOrder[];
+    all.push(...data);
+    const xPages = res.headers.get("X-Pages");
+    pages = xPages ? Number(xPages) : 1;
+    page++;
+  } while (page <= pages);
+  return all;
+}
+
+/** 从订单列表计算买价（最高买单）与售价（最低卖单）；无对应订单则该侧为 null */
+export function computePricesFromOrders(orders: MarketOrder[]): MarketPrice {
+  let b: number | null = null;
+  let s: number | null = null;
+  for (const o of orders) {
+    if (o.is_buy_order) {
+      if (b === null || o.price > b) b = o.price;
+    } else {
+      if (s === null || o.price < s) s = o.price;
+    }
+  }
+  return { b, s };
+}
+
+/** 并发获取多个 type_id 的市场估价（ESI 订单）；失败的 type 跳过 */
+export async function fetchPricesViaEsi(
+  typeIds: number[],
+  concurrency: number,
+): Promise<Map<number, MarketPrice>> {
+  const results = await mapPool(typeIds, concurrency, async (tid) => {
+    try {
+      const orders = await fetchMarketOrders(tid);
+      return [tid, computePricesFromOrders(orders)] as const;
+    } catch {
+      return [tid, null] as const;
+    }
+  });
+  const map = new Map<number, MarketPrice>();
+  for (const [tid, p] of results) {
+    if (p) map.set(tid, p);
+  }
+  return map;
+}
+
+/** 完整 ISK 数字（千位逗号），用于估价明细 */
+export function formatIskFull(value: number): string {
+  if (!Number.isFinite(value)) return "—";
+  return Math.round(value).toLocaleString("en-US");
+}
