@@ -66,6 +66,44 @@ type Distribution = {
   total: number;
 };
 
+type SortKey =
+  | "name"
+  | "typeId"
+  | "quantity"
+  | "buyUnit"
+  | "sellUnit"
+  | "midUnit"
+  | "buySub"
+  | "sellSub"
+  | "midSub";
+
+type SortState = { key: SortKey; dir: "asc" | "desc" } | null;
+
+/** 排序取值；无价格视为 0 */
+function sortValue(it: EstimatedItem, key: SortKey): number | string {
+  const mid = midPrice(it.price);
+  switch (key) {
+    case "name":
+      return it.displayName.toLowerCase();
+    case "typeId":
+      return it.typeId;
+    case "quantity":
+      return it.quantity;
+    case "buyUnit":
+      return it.price?.b ?? 0;
+    case "sellUnit":
+      return it.price?.s ?? 0;
+    case "midUnit":
+      return mid ?? 0;
+    case "buySub":
+      return (it.price?.b ?? 0) * it.quantity;
+    case "sellSub":
+      return (it.price?.s ?? 0) * it.quantity;
+    case "midSub":
+      return (mid ?? 0) * it.quantity;
+  }
+}
+
 /** 按中间价总值降序排列，累计达 70% 前的物品各自一色，其余合并为「其他」 */
 function buildDistribution(items: EstimatedItem[]): Distribution {
   const valued = items
@@ -116,6 +154,9 @@ export default function MarketEstimate() {
     pct: number;
   } | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [sortState, setSortState] = useState<SortState>(null);
+  const [copied, setCopied] = useState(false);
 
   const estimate = useCallback(async () => {
     setError(null);
@@ -143,7 +184,9 @@ export default function MarketEstimate() {
       }
 
       const typeIds = [...new Set(resolved.map((r) => r.typeId))];
-      const esiPrices = await fetchPricesViaEsi(typeIds, FETCH_CONCURRENCY);
+      const esiPrices = await fetchPricesViaEsi(typeIds, FETCH_CONCURRENCY, (done, total) => {
+        setProgress({ done, total });
+      });
 
       const items: EstimatedItem[] = resolved.map((r) => ({
         ...r,
@@ -161,10 +204,12 @@ export default function MarketEstimate() {
       }
 
       setResult({ items, totalBuy, totalSell, totalMid });
+      setSortState(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   }, [text]);
 
@@ -172,6 +217,71 @@ export default function MarketEstimate() {
     () => (result ? buildDistribution(result.items) : null),
     [result],
   );
+
+  const sortedItems = useMemo(() => {
+    if (!result) return [];
+    if (!sortState) return result.items;
+    const items = [...result.items];
+    const dir = sortState.dir === "asc" ? 1 : -1;
+    items.sort((a, b) => {
+      const va = sortValue(a, sortState.key);
+      const vb = sortValue(b, sortState.key);
+      if (typeof va === "string" && typeof vb === "string") {
+        return va < vb ? -dir : va > vb ? dir : 0;
+      }
+      return ((va as number) - (vb as number)) * dir;
+    });
+    return items;
+  }, [result, sortState]);
+
+  const handleSort = useCallback((key: SortKey) => {
+    setSortState((prev) => {
+      if (prev?.key !== key) {
+        return { key, dir: key === "name" ? "asc" : "desc" };
+      }
+      return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
+    });
+  }, []);
+
+  const handleCopy = useCallback(() => {
+    if (!result) return;
+    const headers = [
+      "物品",
+      "TypeID",
+      "数量",
+      "买价(单价)",
+      "卖价(单价)",
+      "中间价(单价)",
+      "买价小计",
+      "卖价小计",
+      "中间价小计",
+    ];
+    const rows = sortedItems.map((it) => {
+      const mid = midPrice(it.price);
+      const b = it.price?.b ?? 0;
+      const s = it.price?.s ?? 0;
+      const m = mid ?? 0;
+      return [
+        it.displayName,
+        it.typeId,
+        it.quantity,
+        b,
+        s,
+        m,
+        b * it.quantity,
+        s * it.quantity,
+        m * it.quantity,
+      ].join("\t");
+    });
+    const tsv = [headers.join("\t"), ...rows].join("\n");
+    navigator.clipboard.writeText(tsv).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [result, sortedItems]);
+
+  const thSortClass = (key: SortKey): string =>
+    !sortState || sortState.key !== key ? "th-sort" : `th-sort active ${sortState.dir}`;
 
   return (
     <>
@@ -189,7 +299,11 @@ export default function MarketEstimate() {
         />
         <div className="toolbar">
           <button type="button" className="btn-primary" disabled={loading} onClick={() => void estimate()}>
-            {loading ? "估算中…" : "估算总价"}
+            {loading && progress
+              ? `估算中… ${progress.done}/${progress.total}`
+              : loading
+                ? "估算中…"
+                : "估算总价"}
           </button>
         </div>
         {error ? <div className="err">{error}</div> : null}
@@ -199,17 +313,14 @@ export default function MarketEstimate() {
         <section className="estimate-section">
           <div className="estimate-summary">
             <div className="estimate-card estimate-card--buy">
-              <div className="estimate-card-label">买价总价（出售可得）</div>
               <div className="estimate-card-value">{formatIskTotal(result.totalBuy)}</div>
               <div className="estimate-card-sub">{formatIskFull(result.totalBuy)} ISK</div>
             </div>
             <div className="estimate-card estimate-card--mid">
-              <div className="estimate-card-label">中间价（估价中枢）</div>
               <div className="estimate-card-value">{formatIskTotal(result.totalMid)}</div>
               <div className="estimate-card-sub">{formatIskFull(result.totalMid)} ISK</div>
             </div>
             <div className="estimate-card estimate-card--sell">
-              <div className="estimate-card-label">售价总价（收购所需）</div>
               <div className="estimate-card-value">{formatIskTotal(result.totalSell)}</div>
               <div className="estimate-card-sub">{formatIskFull(result.totalSell)} ISK</div>
             </div>
@@ -291,23 +402,29 @@ export default function MarketEstimate() {
             </div>
           ) : null}
 
+          <div className="estimate-table-toolbar">
+            <button type="button" className="btn-copy" onClick={handleCopy}>
+              {copied ? "已复制" : "复制表格"}
+            </button>
+          </div>
+
           <div className="estimate-table-wrap">
             <table className="estimate-table">
               <thead>
                 <tr>
-                  <th>物品</th>
-                  <th style={{ textAlign: "right" }}>TypeID</th>
-                  <th style={{ textAlign: "right" }}>数量</th>
-                  <th style={{ textAlign: "right" }}>买价（单价）</th>
-                  <th style={{ textAlign: "right" }}>卖价（单价）</th>
-                  <th style={{ textAlign: "right" }}>中间价（单价）</th>
-                  <th style={{ textAlign: "right" }}>买价小计</th>
-                  <th style={{ textAlign: "right" }}>卖价小计</th>
-                  <th style={{ textAlign: "right" }}>中间价小计</th>
+                  <th className={thSortClass("name")} onClick={() => handleSort("name")}>物品</th>
+                  <th className={thSortClass("typeId")} style={{ textAlign: "right" }} onClick={() => handleSort("typeId")}>TypeID</th>
+                  <th className={thSortClass("quantity")} style={{ textAlign: "right" }} onClick={() => handleSort("quantity")}>数量</th>
+                  <th className={thSortClass("buyUnit")} style={{ textAlign: "right" }} onClick={() => handleSort("buyUnit")}>买价（单价）</th>
+                  <th className={thSortClass("sellUnit")} style={{ textAlign: "right" }} onClick={() => handleSort("sellUnit")}>卖价（单价）</th>
+                  <th className={thSortClass("midUnit")} style={{ textAlign: "right" }} onClick={() => handleSort("midUnit")}>中间价（单价）</th>
+                  <th className={thSortClass("buySub")} style={{ textAlign: "right" }} onClick={() => handleSort("buySub")}>买价小计</th>
+                  <th className={thSortClass("sellSub")} style={{ textAlign: "right" }} onClick={() => handleSort("sellSub")}>卖价小计</th>
+                  <th className={thSortClass("midSub")} style={{ textAlign: "right" }} onClick={() => handleSort("midSub")}>中间价小计</th>
                 </tr>
               </thead>
               <tbody>
-                {result.items.map((it) => {
+                {sortedItems.map((it) => {
                   const mid = midPrice(it.price);
                   return (
                     <tr key={it.typeId}>

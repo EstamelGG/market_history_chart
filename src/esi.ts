@@ -277,17 +277,23 @@ export function computePricesFromOrders(orders: MarketOrder[]): MarketPrice {
   return { b, s };
 }
 
-/** 并发获取多个 type_id 的市场估价（ESI 订单）；失败的 type 跳过 */
+/** 并发获取多个 type_id 的市场估价（ESI 订单）；失败的 type 跳过。onProgress 回调报告进度 */
 export async function fetchPricesViaEsi(
   typeIds: number[],
   concurrency: number,
+  onProgress?: (done: number, total: number) => void,
 ): Promise<Map<number, MarketPrice>> {
+  let done = 0;
+  const total = typeIds.length;
   const results = await mapPool(typeIds, concurrency, async (tid) => {
     try {
       const orders = await fetchMarketOrders(tid);
       return [tid, computePricesFromOrders(orders)] as const;
     } catch {
       return [tid, null] as const;
+    } finally {
+      done++;
+      onProgress?.(done, total);
     }
   });
   const map = new Map<number, MarketPrice>();
