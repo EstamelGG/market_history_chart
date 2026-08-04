@@ -438,6 +438,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+.estimate-card-warn {
+  font-size: 0.72rem;
+  color: #f87171;
+  margin-top: 0.45rem;
+}
+
 /* ===== 分布条 ===== */
 
 .dist-panel {

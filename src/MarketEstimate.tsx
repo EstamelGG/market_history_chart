@@ -222,6 +222,10 @@ export default function MarketEstimate() {
     [result],
   );
 
+  const missingBuy = result?.items.filter((it) => it.price?.b == null).length ?? 0;
+  const missingSell = result?.items.filter((it) => it.price?.s == null).length ?? 0;
+  const missingMid = result?.items.filter((it) => midPrice(it.price) == null).length ?? 0;
+
   const sortedItems = useMemo(() => {
     if (!result) return [];
     if (!sortState) return result.items;
@@ -378,16 +382,22 @@ export default function MarketEstimate() {
         <section className="estimate-section">
           <div className="estimate-summary">
             <div className="estimate-card estimate-card--buy">
+              <div className="estimate-card-label">买价总价</div>
               <div className="estimate-card-value">{formatIskTotal(result.totalBuy)}</div>
               <div className="estimate-card-sub">{formatIskFull(result.totalBuy)} ISK</div>
+              {missingBuy > 0 ? <div className="estimate-card-warn">{missingBuy} 个物品缺少买价</div> : null}
             </div>
             <div className="estimate-card estimate-card--mid">
+              <div className="estimate-card-label">中间价总价</div>
               <div className="estimate-card-value">{formatIskTotal(result.totalMid)}</div>
               <div className="estimate-card-sub">{formatIskFull(result.totalMid)} ISK</div>
+              {missingMid > 0 ? <div className="estimate-card-warn">{missingMid} 个物品缺少价格</div> : null}
             </div>
             <div className="estimate-card estimate-card--sell">
+              <div className="estimate-card-label">卖价总价</div>
               <div className="estimate-card-value">{formatIskTotal(result.totalSell)}</div>
               <div className="estimate-card-sub">{formatIskFull(result.totalSell)} ISK</div>
+              {missingSell > 0 ? <div className="estimate-card-warn">{missingSell} 个物品缺少卖价</div> : null}
             </div>
           </div>
 
