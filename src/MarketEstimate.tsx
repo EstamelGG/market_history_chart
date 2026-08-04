@@ -5,6 +5,7 @@ import {
   formatIskFull,
   formatIskTotal,
   iconUrl,
+  JITA_SYSTEM_ID,
   parseItemLines,
   resolveInventoryLines,
   type MarketPrice,
@@ -157,6 +158,7 @@ export default function MarketEstimate() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [sortState, setSortState] = useState<SortState>(null);
   const [copied, setCopied] = useState(false);
+  const [jitaOnly, setJitaOnly] = useState(false);
 
   const estimate = useCallback(async () => {
     setError(null);
@@ -186,7 +188,7 @@ export default function MarketEstimate() {
       const typeIds = [...new Set(resolved.map((r) => r.typeId))];
       const esiPrices = await fetchPricesViaEsi(typeIds, FETCH_CONCURRENCY, (done, total) => {
         setProgress({ done, total });
-      });
+      }, jitaOnly ? JITA_SYSTEM_ID : undefined);
 
       const items: EstimatedItem[] = resolved.map((r) => ({
         ...r,
@@ -211,7 +213,7 @@ export default function MarketEstimate() {
       setLoading(false);
       setProgress(null);
     }
-  }, [text]);
+  }, [text, jitaOnly]);
 
   const distBuy = useMemo(
     () => (result ? buildDistribution(result.items, (it) => (it.price?.b ?? 0) * it.quantity) : null),
@@ -374,6 +376,10 @@ export default function MarketEstimate() {
                 ? "估算中…"
                 : "估算总价"}
           </button>
+          <label className="checkbox-inline">
+            <input type="checkbox" checked={jitaOnly} onChange={(e) => setJitaOnly(e.target.checked)} />
+            只看 Jita
+          </label>
         </div>
         {error ? <div className="err">{error}</div> : null}
       </section>

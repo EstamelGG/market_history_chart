@@ -241,7 +241,11 @@ export type MarketOrder = {
   is_buy_order: boolean;
   price: number;
   type_id: number;
+  system_id: number;
 };
+
+/** Jita 星系 ID */
+export const JITA_SYSTEM_ID = 30000142;
 
 /** 获取某 type_id 在 The Forge 的市场订单（自动翻页） */
 export async function fetchMarketOrders(typeId: number): Promise<MarketOrder[]> {
@@ -263,11 +267,12 @@ export async function fetchMarketOrders(typeId: number): Promise<MarketOrder[]> 
   return all;
 }
 
-/** 从订单列表计算买价（最高买单）与售价（最低卖单）；无对应订单则该侧为 null */
-export function computePricesFromOrders(orders: MarketOrder[]): MarketPrice {
+/** 从订单列表计算买价（最高买单）与售价（最低卖单）；无对应订单则该侧为 null。可选按星系过滤 */
+export function computePricesFromOrders(orders: MarketOrder[], systemId?: number): MarketPrice {
   let b: number | null = null;
   let s: number | null = null;
   for (const o of orders) {
+    if (systemId != null && o.system_id !== systemId) continue;
     if (o.is_buy_order) {
       if (b === null || o.price > b) b = o.price;
     } else {
@@ -277,18 +282,19 @@ export function computePricesFromOrders(orders: MarketOrder[]): MarketPrice {
   return { b, s };
 }
 
-/** 并发获取多个 type_id 的市场估价（ESI 订单）；失败的 type 跳过。onProgress 回调报告进度 */
+/** 并发获取多个 type_id 的市场估价（ESI 订单）；失败的 type 跳过。onProgress 回调报告进度。可选按星系过滤 */
 export async function fetchPricesViaEsi(
   typeIds: number[],
   concurrency: number,
   onProgress?: (done: number, total: number) => void,
+  systemId?: number,
 ): Promise<Map<number, MarketPrice>> {
   let done = 0;
   const total = typeIds.length;
   const results = await mapPool(typeIds, concurrency, async (tid) => {
     try {
       const orders = await fetchMarketOrders(tid);
-      return [tid, computePricesFromOrders(orders)] as const;
+      return [tid, computePricesFromOrders(orders, systemId)] as const;
     } catch {
       return [tid, null] as const;
     } finally {
