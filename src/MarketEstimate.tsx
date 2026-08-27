@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchPricesViaEsi,
   fetchUniverseIds,
@@ -214,6 +214,19 @@ export default function MarketEstimate() {
       setProgress(null);
     }
   }, [text, jitaOnly]);
+
+  // 勾选/取消「只看 Jita」后自动按新过滤条件重新估算（跳过首次挂载）
+  const skipFirstJitaToggle = useRef(true);
+  useEffect(() => {
+    if (skipFirstJitaToggle.current) {
+      skipFirstJitaToggle.current = false;
+      return;
+    }
+    if (text.trim()) {
+      void estimate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jitaOnly]);
 
   const distBuy = useMemo(
     () => (result ? buildDistribution(result.items, (it) => (it.price?.b ?? 0) * it.quantity) : null),

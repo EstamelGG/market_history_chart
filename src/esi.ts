@@ -63,7 +63,10 @@ export type IdsResponse = {
   corporations?: { id: number; name: string }[];
 };
 
-export async function fetchUniverseIds(names: string[]): Promise<IdsResponse> {
+/** `/universe/ids` 单次最多可处理的 names 数量 */
+const UNIVERSE_IDS_CHUNK_SIZE = 400;
+
+async function fetchUniverseIdsChunk(names: string[]): Promise<IdsResponse> {
   const res = await fetch(`${ESI_BASE}/universe/ids?category=inventory_types`, {
     method: "POST",
     headers: {
@@ -77,6 +80,20 @@ export async function fetchUniverseIds(names: string[]): Promise<IdsResponse> {
     throw new Error(`universe/ids ${res.status}: ${await res.text()}`);
   }
   return res.json() as Promise<IdsResponse>;
+}
+
+export async function fetchUniverseIds(names: string[]): Promise<IdsResponse> {
+  const merged: IdsResponse = {};
+  for (let i = 0; i < names.length; i += UNIVERSE_IDS_CHUNK_SIZE) {
+    const part = await fetchUniverseIdsChunk(names.slice(i, i + UNIVERSE_IDS_CHUNK_SIZE));
+    if (part.inventory_types) {
+      merged.inventory_types = [...(merged.inventory_types ?? []), ...part.inventory_types];
+    }
+    if (part.corporations) {
+      merged.corporations = [...(merged.corporations ?? []), ...part.corporations];
+    }
+  }
+  return merged;
 }
 
 export type HistoryPoint = {
