@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import MarketEstimate from "./MarketEstimate";
+import MissingMarket from "./MissingMarket";
 import "./App.css";
 import {
   fetchMarketHistory,
@@ -145,7 +146,7 @@ function buildChartRows(
 }
 
 export default function App() {
-  const [view, setView] = useState<"chart" | "estimate">("chart");
+  const [view, setView] = useState<"chart" | "estimate" | "missing">("chart");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -280,11 +281,14 @@ export default function App() {
             >
               市场估价
             </button>
+            <button type="button" className={`nav-link${view === "missing" ? " active" : ""}`}
+              onClick={() => setView("missing")}>我缺什么</button>
           </nav>
         </div>
       </header>
 
-      {view === "estimate" ? (
+      <div hidden={view !== "missing"}><MissingMarket /></div>
+      {view === "missing" ? null : view === "estimate" ? (
         <MarketEstimate />
       ) : (
         <>

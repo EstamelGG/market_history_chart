@@ -728,3 +728,13 @@
 .th-sort.active.desc::after {
   content: "↓";
 }
+.missing-market h2 { margin-top: 0; }
+.catalog-files { display: flex; flex-wrap: wrap; gap: 1rem 2rem; }
+.catalog-files label { display: grid; gap: .5rem; max-width: 100%; }
+.catalog-files input { max-width: 100%; }
+.missing-market ul { list-style: none; padding: 0; }
+.missing-market ul ul { margin: .2rem 0 .4rem .75rem; padding-left: .8rem; border-left: 1px solid var(--border); }
+.missing-market li { line-height: 2.2rem; }
+.missing-market summary { cursor: pointer; }
+.missing-market summary:hover { color: var(--accent); }
+.missing-market img { vertical-align: middle; }
