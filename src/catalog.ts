@@ -1,9 +1,24 @@
 type Item = { id: number; name: string };
 export type MarketGroup = Item & {
   children: MarketGroup[];
-  items: Item[];
+  items: (Item & { en?: string; zh?: string })[];
   icon?: number;
 };
+
+export function collectNames(group: MarketGroup, language: "en" | "zh") {
+  const names: string[] = [];
+  let skipped = 0;
+  function visit(branch: MarketGroup) {
+    branch.children.forEach(visit);
+    for (const item of branch.items) {
+      const name = item[language]?.trim();
+      if (name) names.push(name.replace(/[\r\n]+/g, " "));
+      else skipped++;
+    }
+  }
+  visit(group);
+  return { names, skipped };
+}
 
 type RecordLine = {
   _key: number;
@@ -11,6 +26,19 @@ type RecordLine = {
   parentGroupID?: number;
   marketGroupID?: number;
 };
+
+export function compareCatalog(groups: MarketGroup[], owned: ReadonlySet<number>) {
+  let total = 0, missing = 0;
+  function filter(group: MarketGroup): MarketGroup[] {
+    const items = group.items.filter(item => !owned.has(item.id));
+    total += group.items.length;
+    missing += items.length;
+    const children = group.children.flatMap(filter);
+    return items.length || children.length ? [{ ...group, children, items }] : [];
+  }
+  const roots = groups.flatMap(filter);
+  return { roots, missing, total };
+}
 
 async function readLines(file: File, signal: AbortSignal, visit: (row: RecordLine) => void) {
   const reader = file.stream().pipeThrough(new TextDecoderStream()).getReader();
@@ -61,7 +89,9 @@ export async function buildCatalog(groupsFile: File, typesFile: File, signal: Ab
     (branch?.children ?? roots).push(group);
   }
   await readLines(typesFile, signal, row => {
-    if (row.marketGroupID != null) groups.get(row.marketGroupID)?.items.push(item(row));
+    if (row.marketGroupID != null) groups.get(row.marketGroupID)?.items.push({
+      ...item(row), en: row.name?.en, zh: row.name?.zh,
+    });
   });
   let visited = 0;
   function assignIcon(group: MarketGroup) {

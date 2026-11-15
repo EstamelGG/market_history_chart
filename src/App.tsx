@@ -264,7 +264,7 @@ export default function App() {
         <div className="app-header-row">
           <div>
             <h1 className="app-title">EVE 市场工具</h1>
-            <p className="app-sub">英文物品名 · Jita (The Forge)</p>
+            <p className="app-sub">{view === "missing" ? "个人资产 · 市场目录" : "英文物品名 · Jita (The Forge)"}</p>
           </div>
           <nav className="app-nav">
             <button
@@ -291,7 +291,7 @@ export default function App() {
       {view === "missing" ? null : view === "estimate" ? (
         <MarketEstimate />
       ) : (
-        <>
+        <main className="workspace">
           <section className="input-panel">
             <label className="input-label" htmlFor="items-input">
               物品列表
@@ -468,7 +468,7 @@ export default function App() {
           </div>
         </div>
       ) : null}
-        </>
+        </main>
       )}
     </div>
   );

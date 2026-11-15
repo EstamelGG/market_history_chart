@@ -1,17 +1,19 @@
 .app {
   min-height: 100%;
-  padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 2.5rem;
-  max-width: 1280px;
+  padding: 1rem clamp(.75rem, 2.5vw, 2rem) 2rem;
+  max-width: 1540px;
   margin: 0 auto;
 }
 
 .app-header {
-  margin-bottom: 1.25rem;
+  margin-bottom: .9rem;
+  padding-bottom: .85rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .app-header-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -70,7 +72,6 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 1rem 1.1rem;
-  box-shadow: 0 0 0 1px rgba(42, 92, 74, 0.35) inset;
 }
 
 .input-label {
@@ -78,7 +79,7 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--accent-dim);
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
 }
 
@@ -735,6 +736,39 @@
 .missing-market ul { list-style: none; padding: 0; }
 .missing-market ul ul { margin: .2rem 0 .4rem .75rem; padding-left: .8rem; border-left: 1px solid var(--border); }
 .missing-market li { line-height: 2.2rem; }
-.missing-market summary { cursor: pointer; }
-.missing-market summary:hover { color: var(--accent); }
-.missing-market img { vertical-align: middle; }
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(230px, 21rem) minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+.workspace > * { min-width: 0; }
+.workspace .chart-section, .workspace .estimate-section { margin-top: 0; }
+.workspace .item-textarea { min-height: 13rem; }
+.workspace .estimate-summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: .65rem; }
+.app img { border-radius: 6px; }
+.result-panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
+.result-panel h2, .missing-market h2 { font-size: 1rem; margin: 0 0 .65rem; }
+.missing-market p { font-size: .84rem; color: var(--text-muted); overflow-wrap: anywhere; }
+.missing-market p:empty, .copy-notice:empty { display: none; }
+.missing-market form { margin-top: 1rem; border-top: 1px solid var(--border); padding-top: .9rem; }
+.missing-market label { font-size: .85rem; font-weight: 600; }
+.catalog-files { display: grid; gap: .75rem; }
+.missing-market input { width: 100%; color: var(--text); background: var(--bg-deep); border: 1px solid var(--border); border-radius: 6px; padding: .45rem; }
+.catalog-files input::file-selector-button { margin-right: .55rem; border: 0; border-radius: 4px; background: var(--bg-elevated); color: var(--text); padding: .3rem .45rem; cursor: pointer; }
+.missing-market form button { margin-top: .5rem; }
+.missing-market .result-panel > ul { margin: 0; }
+.missing-market img { vertical-align: middle; width: 26px; height: 26px; }
+.branch-row { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .6rem; padding: .2rem 0; border-bottom: 1px solid var(--border); }
+.branch-row:hover { background: var(--bg-elevated); }
+.branch-toggle { flex: 1 1 8rem; display: flex; gap: .4rem; align-items: center; text-align: left; color: var(--text); border: 0; border-radius: 4px; background: transparent; padding: .2rem; cursor: pointer; overflow-wrap: anywhere; }
+.branch-toggle span { color: var(--text-muted); }
+.branch-actions { display: flex; gap: .3rem; margin-left: auto; }
+.branch-actions button { padding: .3rem .45rem; }
+.copy-notice { color: var(--text-muted); }
+.app :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 800px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); gap: .7rem; }
+  .workspace .item-textarea { min-height: 7rem; }
+  .missing-market ul ul { margin-left: .3rem; padding-left: .4rem; }
+}

@@ -368,7 +368,7 @@ export default function MarketEstimate() {
   };
 
   return (
-    <>
+    <main className="workspace">
       <section className="input-panel">
         <label className="input-label" htmlFor="estimate-input">
           物品列表
@@ -498,7 +498,7 @@ export default function MarketEstimate() {
             </table>
           </div>
         </section>
-      ) : null}
+      ) : <section className="result-panel"><h2>估价结果</h2><p className="empty-chart">输入物品清单并运行估价，即可查看总价和明细。</p></section>}
 
       {missingModal ? (
         <div className="modal-backdrop" role="presentation" onClick={() => setMissingModal(null)}>
@@ -528,6 +528,6 @@ export default function MarketEstimate() {
           </div>
         </div>
       ) : null}
-    </>
+    </main>
   );
 }
